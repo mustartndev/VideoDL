@@ -83,31 +83,33 @@ async def process_download(job_id: str, url: str, headers: dict):
         jobs[job_id]["progress"] = "Starting download..."
         
         # Construct yt-dlp command
-        # - Prefer H.264/AAC for maximum compatibility
-        # - Force MP4 container
+        # For non-YouTube: prefer H.264/AAC for compatibility
+        # For YouTube: let yt-dlp pick best available format (less restrictive = fewer 403s)
         cmd = [
             "yt-dlp", 
             "-P", str(job_dir), 
-            "-S", "vcodec:h264,res,acodec:m4a",
             "--recode-video", "mp4",
             "--postprocessor-args", "VideoConvertor:-c:v libx264 -c:a aac -pix_fmt yuv420p",
             "--no-warnings",
             "--newline",
         ]
         
-        # YouTube: use Chrome cookies + latest recommended player client workaround
         if is_youtube:
+            # YouTube-specific: use Chrome cookies, don't restrict formats too much
             cmd.extend([
                 "--cookies-from-browser", "chrome",
                 "--extractor-args", "youtube:player_client=default,-android_sdkless",
                 "--force-ipv4",
-                "--retries", "3",
-                "--file-access-retries", "3",
+                "--retries", "5",
+                "--fragment-retries", "5",
+                "--file-access-retries", "5",
                 "--rm-cache-dir",
-                "--check-formats",
             ])
             jobs[job_id]["progress"] = "Authenticating with YouTube..."
-            print(f"[Job {job_id}] YouTube detected, using Chrome cookies + nightly workaround")
+            print(f"[Job {job_id}] YouTube detected, using Chrome cookies")
+        else:
+            # Non-YouTube: prefer H.264 for compatibility
+            cmd.extend(["-S", "vcodec:h264,res,acodec:m4a"])
         
         # Append URL at end
         cmd.append(url)
