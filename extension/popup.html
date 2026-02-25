@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VideoDL</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+    <div class="popup-container">
+
+        <!-- Header -->
+        <div class="header">
+            <div class="header-icon">
+                <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14.5v-9l6 4.5-6 4.5z"/>
+                </svg>
+            </div>
+            <h1>VideoDL</h1>
+        </div>
+
+        <!-- Connection Status -->
+        <div id="connectionStatus" class="status disconnected">
+            Checking server…
+        </div>
+
+        <!-- Settings -->
+        <details class="settings-panel">
+            <summary>Settings</summary>
+            <div class="settings-inner">
+                <label for="serverUrl">Backend URL</label>
+                <input type="text" id="serverUrl" value="http://127.0.0.1:8000" spellcheck="false">
+            </div>
+        </details>
+
+        <!-- Log Panel -->
+        <div id="logs" class="logs">Ready…</div>
+
+        <!-- Message Area -->
+        <div id="message" class="message"></div>
+
+        <!-- Divider -->
+        <hr class="divider">
+
+        <!-- Video Count -->
+        <div id="videoCount" class="video-count" style="display:none;"></div>
+
+        <!-- Video List -->
+        <div id="videoList" class="video-list">
+            <!-- Videos will be injected here by popup.js -->
+        </div>
+
+    </div>
+
+    <script src="popup.js"></script>
+</body>
+</html>

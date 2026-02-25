@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VideoDL - Universal Downloader</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #6366f1;
+            --secondary: #ec4899;
+            --bg-grad: linear-gradient(135deg, #0f172a 0%, #312e81 100%);
+            --glass: rgba(255, 255, 255, 0.1);
+            --border: rgba(255, 255, 255, 0.2);
+            --text: #f8fafc;
+        }
+
+        body {
+            margin: 0;
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            background: var(--bg-grad);
+            color: var(--text);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow-x: hidden;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 600px;
+            padding: 2rem;
+            box-sizing: border-box;
+        }
+
+        .card {
+            background: var(--glass);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--border);
+            border-radius: 24px;
+            padding: 3rem;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .card::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.1) 0%, transparent 60%);
+            transform: rotate(30deg);
+            pointer-events: none;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            font-weight: 800;
+            margin-bottom: 0.5rem;
+            background: linear-gradient(to right, #818cf8, #f472b6);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        p {
+            color: #94a3b8;
+            margin-bottom: 2rem;
+            line-height: 1.6;
+        }
+
+        .input-group {
+            position: relative;
+            margin-bottom: 1.5rem;
+        }
+
+        input {
+            width: 100%;
+            padding: 1.25rem;
+            background: rgba(15, 23, 42, 0.6);
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            color: white;
+            font-size: 1rem;
+            outline: none;
+            transition: all 0.3s ease;
+            box-sizing: border-box;
+        }
+
+        input:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.2);
+        }
+
+        button {
+            width: 100%;
+            padding: 1.25rem;
+            background: linear-gradient(to right, var(--primary), var(--secondary));
+            border: none;
+            border-radius: 12px;
+            color: white;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, opacity 0.2s;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            opacity: 0.9;
+        }
+
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .status {
+            margin-top: 1.5rem;
+            padding: 1rem;
+            border-radius: 12px;
+            font-weight: 500;
+            display: none;
+        }
+
+        .status.processing {
+            background: rgba(59, 130, 246, 0.2);
+            color: #60a5fa;
+            border: 1px solid rgba(59, 130, 246, 0.3);
+        }
+
+        .status.success {
+            background: rgba(34, 197, 94, 0.2);
+            color: #4ade80;
+            border: 1px solid rgba(34, 197, 94, 0.3);
+        }
+
+        .status.error {
+            background: rgba(239, 68, 68, 0.2);
+            color: #f87171;
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            white-space: pre-wrap;
+            word-break: break-word;
+            text-align: left;
+            font-size: 0.9rem;
+        }
+
+        .progress-bar-container {
+            margin-top: 0.75rem;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 8px;
+            overflow: hidden;
+            height: 6px;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(to right, var(--primary), var(--secondary));
+            border-radius: 8px;
+            transition: width 0.3s ease;
+            width: 0%;
+        }
+
+        .progress-text {
+            margin-top: 0.5rem;
+            font-size: 0.85rem;
+            color: #94a3b8;
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid rgba(96, 165, 250, 0.3);
+            border-top-color: #60a5fa;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            vertical-align: middle;
+            margin-right: 8px;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .download-link {
+            display: inline-block;
+            margin-top: 1rem;
+            padding: 0.75rem 2rem;
+            background: #22c55e;
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: 600;
+            box-shadow: 0 4px 6px -1px rgba(34, 197, 94, 0.4);
+            transition: transform 0.2s;
+        }
+
+        .download-link:hover {
+            transform: translateY(-2px);
+        }
+
+        .tips {
+            margin-top: 3rem;
+            font-size: 0.85rem;
+            color: #64748b;
+            border-top: 1px solid var(--border);
+            padding-top: 1.5rem;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="card">
+            <h1>VideoDL</h1>
+            <p>Universal Video Downloader. Supports YouTube, Vimeo & more.<br>Converts to MP4 automatically.</p>
+
+            <div class="input-group">
+                <input type="text" id="urlInput" placeholder="Paste video URL here (e.g., https://youtube.com/...)">
+            </div>
+
+            <button id="dlBtn">Download Now</button>
+
+            <div id="status" class="status"></div>
+            <div id="progressContainer" style="display:none;">
+                <div class="progress-bar-container">
+                    <div class="progress-bar" id="progressBar"></div>
+                </div>
+                <div class="progress-text" id="progressText"></div>
+            </div>
+            <div id="result"></div>
+
+            <div class="divider" style="margin: 2rem 0; border-top: 1px solid var(--border);"></div>
+
+            <h2>Get the Chrome Extension</h2>
+            <p>For best results (Auto-Detect & One-Click Download), install our browser extension.</p>
+
+            <a href="/static/extension.zip" class="download-link" style="background: #2563eb;">Download Extension
+                (.zip)</a>
+
+            <div class="instructions"
+                style="text-align: left; margin-top: 2rem; background: rgba(0,0,0,0.2); padding: 1.5rem; border-radius: 12px; font-size: 0.9rem;">
+                <h3 style="margin-top:0">How to Install</h3>
+                <ol style="padding-left: 1.2rem; color: #cbd5e1;">
+                    <li>Click the blue button above to download <strong>extension.zip</strong>.</li>
+                    <li>Unzip it to a folder (e.g., Documents/VideoDL).</li>
+                    <li>Open Chrome and type <strong>chrome://extensions/</strong> in the address bar.</li>
+                    <li>Switch on <strong>Developer mode</strong> (top right).</li>
+                    <li>Click <strong>Load unpacked</strong> and select your folder.</li>
+                    <li>Click the extension icon and make sure the Server URL is: <br><code
+                            style="background:rgba(255,255,255,0.1); padding:2px 5px; border-radius:4px;"
+                            id="serverUrlDisplay">...</code></li>
+                </ol>
+            </div>
+
+            <div class="tips">
+                <strong>Alternately:</strong> Use the web downloader above for simple links.
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const btn = document.getElementById('dlBtn');
+            const input = document.getElementById('urlInput');
+            const statusDiv = document.getElementById('status');
+            const resultDiv = document.getElementById('result');
+            const progressContainer = document.getElementById('progressContainer');
+            const progressBar = document.getElementById('progressBar');
+            const progressText = document.getElementById('progressText');
+
+            // Display current origin for easy copy-paste
+            const serverUrlDisplay = document.getElementById('serverUrlDisplay');
+            if (serverUrlDisplay) serverUrlDisplay.textContent = window.location.origin;
+
+            // Check for URL param
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.has('url')) {
+                input.value = urlParams.get('url');
+            }
+
+            function parseProgress(progressStr) {
+                const match = progressStr.match(/([\d.]+)%/);
+                return match ? parseFloat(match[1]) : null;
+            }
+
+            async function pollJob(jobId) {
+                const interval = setInterval(async () => {
+                    try {
+                        const res = await fetch(`/jobs/${jobId}`);
+                        const data = await res.json();
+
+                        if (data.progress) {
+                            progressText.textContent = data.progress;
+                            const pct = parseProgress(data.progress);
+                            if (pct !== null) {
+                                progressBar.style.width = pct + '%';
+                            }
+                        }
+
+                        if (data.status === 'done') {
+                            clearInterval(interval);
+                            statusDiv.className = 'status success';
+                            statusDiv.innerHTML = '✅ Download Complete!';
+                            progressBar.style.width = '100%';
+                            progressText.textContent = data.progress || 'Done!';
+
+                            const link = document.createElement('a');
+                            link.href = data.download_url;
+                            link.className = 'download-link';
+                            link.textContent = '💾 Save MP4 File';
+                            link.download = '';
+                            resultDiv.innerHTML = '';
+                            resultDiv.appendChild(link);
+
+                            btn.disabled = false;
+                            btn.textContent = 'Download Another';
+                        } else if (data.status === 'error') {
+                            clearInterval(interval);
+                            statusDiv.className = 'status error';
+                            statusDiv.textContent = '❌ Error:\n' + (data.error || 'Unknown error');
+                            progressContainer.style.display = 'none';
+                            btn.disabled = false;
+                            btn.textContent = 'Try Again';
+                        }
+                    } catch (e) {
+                        console.error(e);
+                    }
+                }, 2000);
+            }
+
+            if (btn) {
+                btn.onclick = async () => {
+                    const url = input.value.trim();
+                    if (!url) return;
+
+                    btn.disabled = true;
+                    btn.textContent = 'Processing...';
+                    statusDiv.style.display = 'block';
+                    statusDiv.className = 'status processing';
+                    statusDiv.innerHTML = '<span class="spinner"></span> Connecting to server...';
+                    resultDiv.innerHTML = '';
+                    progressContainer.style.display = 'block';
+                    progressBar.style.width = '0%';
+                    progressText.textContent = 'Waiting for server...';
+
+                    try {
+                        const res = await fetch('/download', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ url: url })
+                        });
+
+                        if (res.ok) {
+                            const data = await res.json();
+                            statusDiv.innerHTML = '<span class="spinner"></span> Downloading & converting...';
+                            progressText.textContent = 'Job started, waiting for progress...';
+                            pollJob(data.job_id);
+                        } else {
+                            const err = await res.json();
+                            throw new Error(err.detail || 'Server rejected request (' + res.status + ')');
+                        }
+                    } catch (e) {
+                        statusDiv.className = 'status error';
+                        statusDiv.textContent = '❌ Connection Failed:\n' + e.message;
+                        progressContainer.style.display = 'none';
+                        btn.disabled = false;
+                        btn.textContent = 'Try Again';
+                    }
+                };
+            }
+        });
+    </script>
+</body>
+
+</html>
