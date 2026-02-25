@@ -2,3 +2,6 @@ backend/__pycache__/
 .DS_Store
 backend.zip
 extension.zip
+
+# Downloaded video job folders (UUID directories)
+[0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f]-*/

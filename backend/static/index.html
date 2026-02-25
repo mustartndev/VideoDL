@@ -317,10 +317,20 @@
                             progressBar.style.width = '100%';
                             progressText.textContent = data.progress || 'Done!';
 
+                            // Auto-trigger download to browser's Downloads folder
+                            const autoLink = document.createElement('a');
+                            autoLink.href = data.download_url;
+                            autoLink.download = '';
+                            autoLink.style.display = 'none';
+                            document.body.appendChild(autoLink);
+                            autoLink.click();
+                            document.body.removeChild(autoLink);
+
+                            // Also show manual fallback link
                             const link = document.createElement('a');
                             link.href = data.download_url;
                             link.className = 'download-link';
-                            link.textContent = '💾 Save MP4 File';
+                            link.textContent = '💾 Save MP4 File (click if download didn\'t start)';
                             link.download = '';
                             resultDiv.innerHTML = '';
                             resultDiv.appendChild(link);
