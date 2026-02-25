@@ -95,11 +95,17 @@ async def process_download(job_id: str, url: str, headers: dict):
             "--newline",
         ]
         
-        # YouTube: use Chrome cookies to bypass 403 blocks
+        # YouTube: use Chrome cookies + alternative player clients to bypass blocks
         if is_youtube:
-            cmd.extend(["--cookies-from-browser", "chrome"])
+            cmd.extend([
+                "--cookies-from-browser", "chrome",
+                "--extractor-args", "youtube:player_client=web_creator,mweb",
+                "--force-ipv4",
+                "--retries", "3",
+                "--file-access-retries", "3",
+            ])
             jobs[job_id]["progress"] = "Authenticating with YouTube..."
-            print(f"[Job {job_id}] YouTube detected, using Chrome cookies")
+            print(f"[Job {job_id}] YouTube detected, using Chrome cookies + alt clients")
         
         # Append URL at end
         cmd.append(url)
