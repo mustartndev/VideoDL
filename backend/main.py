@@ -95,7 +95,7 @@ async def process_download(job_id: str, url: str, headers: dict):
         
         # Construct yt-dlp command
         if is_youtube:
-            # YouTube: use EJS challenge solver via GitHub + Chrome cookies
+            # YouTube: use EJS challenge solver via Deno
             cmd = [
                 _ytdlp_path, 
                 "-P", str(job_dir), 
@@ -103,7 +103,6 @@ async def process_download(job_id: str, url: str, headers: dict):
                 "--merge-output-format", "mp4",
                 "--no-warnings",
                 "--newline",
-                "--cookies-from-browser", "chrome",
                 "--force-ipv4",
                 "--retries", "5",
                 "--fragment-retries", "5",
@@ -111,8 +110,18 @@ async def process_download(job_id: str, url: str, headers: dict):
                 "--rm-cache-dir",
                 "--remote-components", "ejs:npm",
             ]
+            # Use Chrome cookies if Chrome is available (local dev)
+            # On cloud servers, Chrome won't exist — YouTube public videos still work
+            chrome_cookies_path = Path.home() / "Library" / "Application Support" / "Google" / "Chrome"
+            if not chrome_cookies_path.exists():
+                # Also check Linux path
+                chrome_cookies_path = Path.home() / ".config" / "google-chrome"
+            if chrome_cookies_path.exists():
+                cmd.extend(["--cookies-from-browser", "chrome"])
+                print(f"[Job {job_id}] YouTube detected, using Chrome cookies + Deno EJS")
+            else:
+                print(f"[Job {job_id}] YouTube detected, using Deno EJS (no Chrome cookies)")
             jobs[job_id]["progress"] = "Authenticating with YouTube..."
-            print(f"[Job {job_id}] YouTube detected, using Chrome cookies")
         else:
             # Non-YouTube: prefer H.264/AAC, recode to MP4
             cmd = [

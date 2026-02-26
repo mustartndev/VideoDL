@@ -1,0 +1,12 @@
+version: "3.8"
+services:
+  videodl:
+    build: .
+    ports:
+      - "8000:8000"
+    volumes:
+      - downloads:/root/Downloads/VideoDL
+    restart: unless-stopped
+
+volumes:
+  downloads:
