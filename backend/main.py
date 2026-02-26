@@ -1,4 +1,5 @@
 import os
+import sys
 import uuid
 import subprocess
 import uvicorn
@@ -11,6 +12,11 @@ from pathlib import Path
 
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
+
+# Resolve yt-dlp path: use the one in the same bin/ dir as the running Python
+_python_bin_dir = str(Path(sys.executable).parent)
+_ytdlp_path = shutil.which("yt-dlp", path=_python_bin_dir) or shutil.which("yt-dlp") or "yt-dlp"
+print(f"[INIT] yt-dlp resolved at: {_ytdlp_path}")
 
 # Setup ffmpeg path for local development (static_ffmpeg)
 ffmpeg_dir = None
@@ -58,10 +64,15 @@ class DownloadRequest(BaseModel):
 
 
 def get_subprocess_env():
-    """Build environment dict that includes ffmpeg on PATH for the subprocess."""
+    """Build environment dict that includes ffmpeg, node, and venv bin on PATH for the subprocess."""
     env = os.environ.copy()
+    extra_paths = []
     if ffmpeg_dir:
-        env["PATH"] = ffmpeg_dir + os.pathsep + env.get("PATH", "")
+        extra_paths.append(ffmpeg_dir)
+    # Add venv bin (for yt-dlp) and common Node.js locations (for EJS signature solving)
+    extra_paths.append(_python_bin_dir)
+    extra_paths.append("/usr/local/bin")
+    env["PATH"] = os.pathsep.join(extra_paths) + os.pathsep + env.get("PATH", "")
     return env
 
 
@@ -83,33 +94,36 @@ async def process_download(job_id: str, url: str, headers: dict):
         jobs[job_id]["progress"] = "Starting download..."
         
         # Construct yt-dlp command
-        # For non-YouTube: prefer H.264/AAC for compatibility
-        # For YouTube: let yt-dlp pick best available format (less restrictive = fewer 403s)
-        cmd = [
-            "yt-dlp", 
-            "-P", str(job_dir), 
-            "--recode-video", "mp4",
-            "--postprocessor-args", "VideoConvertor:-c:v libx264 -c:a aac -pix_fmt yuv420p",
-            "--no-warnings",
-            "--newline",
-        ]
-        
         if is_youtube:
-            # YouTube-specific: use Chrome cookies, don't restrict formats too much
-            cmd.extend([
+            # YouTube: use EJS challenge solver via GitHub + Chrome cookies
+            cmd = [
+                _ytdlp_path, 
+                "-P", str(job_dir), 
+                "-f", "bv*+ba/b",
+                "--merge-output-format", "mp4",
+                "--no-warnings",
+                "--newline",
                 "--cookies-from-browser", "chrome",
-                "--extractor-args", "youtube:player_client=default,-android_sdkless",
                 "--force-ipv4",
                 "--retries", "5",
                 "--fragment-retries", "5",
                 "--file-access-retries", "5",
                 "--rm-cache-dir",
-            ])
+                "--remote-components", "ejs:npm",
+            ]
             jobs[job_id]["progress"] = "Authenticating with YouTube..."
             print(f"[Job {job_id}] YouTube detected, using Chrome cookies")
         else:
-            # Non-YouTube: prefer H.264 for compatibility
-            cmd.extend(["-S", "vcodec:h264,res,acodec:m4a"])
+            # Non-YouTube: prefer H.264/AAC, recode to MP4
+            cmd = [
+                _ytdlp_path, 
+                "-P", str(job_dir), 
+                "-S", "vcodec:h264,res,acodec:m4a",
+                "--recode-video", "mp4",
+                "--postprocessor-args", "VideoConvertor:-c:v libx264 -c:a aac -pix_fmt yuv420p",
+                "--no-warnings",
+                "--newline",
+            ]
         
         # Append URL at end
         cmd.append(url)

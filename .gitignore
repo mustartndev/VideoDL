@@ -5,3 +5,4 @@ extension.zip
 
 # Downloaded video job folders (UUID directories)
 [0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f]-*/
+venv/
